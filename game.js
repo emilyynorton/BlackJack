@@ -167,27 +167,35 @@ class BlackjackGame {
             
             // Check if both have Blackjack
             if (this.playerScore === 21 && this.playerHand.length === 2) {
-                const statusElement = document.getElementById('gameStatus');
-                if (statusElement) {
-                    statusElement.textContent = 'Both have Blackjack! Push!';
-                }
+                // const statusElement = document.getElementById('gameStatus');
+                //if (statusElement) {
+                    // statusElement.textContent = 'Both have Blackjack! Push!';
+                // }
+                const message = 'Both have Blackjack! Push!';
+                document.getElementById('gameStatus').textContent = message;
                 this.awardWinnings(1);
-                return;
+                await this.showMoneyUpdate();
+                await this.endGame(message);
             }
             
-            const statusElement = document.getElementById('gameStatus');
-            if (statusElement) {
-                statusElement.textContent = 'Dealer has Blackjack! You lose!';
-            }
+            // const statusElement = document.getElementById('gameStatus');
+            // if (statusElement) {
+                // statusElement.textContent = 'Dealer has Blackjack! You lose!';
+            // }
+            const message = 'Dealer has Blackjack! You lose!';
+            document.getElementById('gameStatus').textContent = message;
             this.awardWinnings(0);
-            return;
+            await this.showMoneyUpdate();
+            await this.endGame(message);
         }
 
         // Check for player Blackjack
         if (this.playerScore === 21 && this.playerHand.length === 2) {
-            this.endGame('Blackjack! You win!');
-            this.awardWinnings(1.5);
-            return;
+            const message = 'Blackjack! You win!';
+            document.getElementById('gameStatus').textContent = message;
+            this.awardWinnings(2.5);
+            await this.showMoneyUpdate();
+            await this.endGame(message);
         }
 
         this.updateDisplay();
@@ -252,13 +260,13 @@ class BlackjackGame {
             await new Promise(resolve => setTimeout(resolve, 1500));
             
             // Clear the status message
-            console.log('Dealer score:', this.dealerScore);
+            // console.log('Dealer score:', this.dealerScore);
         }
 
         if (this.dealerScore > 21) {
             const message = 'Dealer busts, you win!';
             document.getElementById('gameStatus').textContent = message;
-            this.awardWinnings(1);
+            this.awardWinnings(2);
             await this.showMoneyUpdate();
             await this.endGame(message);
         } else {
@@ -299,7 +307,7 @@ class BlackjackGame {
         if (this.playerScore === this.dealerScore) {
             return { message: 'Push! No winner.', multiplier: 1 };
         } else if (this.playerScore > this.dealerScore) {
-            return { message: 'You win!', multiplier: 1 };
+            return { message: 'You win!', multiplier: 2 };
         } else {
             return { message: 'Dealer wins!', multiplier: 0 };
         }
@@ -307,12 +315,10 @@ class BlackjackGame {
 
     awardWinnings(multiplier) {
         let winnings = 0;
+        const wagerInCents = Math.floor(this.currentWager * 100);
         if (multiplier > 0) {
-            if (multiplier === 1.5) {
-                winnings = (this.currentWager * 100) + Math.floor(this.currentWager * 1.5 * 100); // dollars to cents
-            } else {
-                winnings = (this.currentWager * 100) + Math.floor(this.currentWager * 100); // dollars to cents
-            }
+            winnings = Math.floor((this.currentWager * (multiplier-1)) * 100); // cents
+            winnings += wagerInCents;
         }
     
         // Award coins
