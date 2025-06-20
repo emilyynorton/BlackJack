@@ -94,7 +94,6 @@ class BlackjackGame {
         // Find a valid combination of coins that won't go negative
         let isValidWager = false;
         let bestCombination = null;
-        let bestCombinationMessage = '';
         
         // Try different combinations of coins, prioritizing quarters first
         // Start with maximum quarters and reduce until we find a valid combination
@@ -159,6 +158,10 @@ class BlackjackGame {
         // Player gets two cards
         this.playerHand.push(this.deck.pop());
         this.playerHand.push(this.deck.pop());
+        // this.playerHand = [
+            // { suit: '♠', value: 'A', points: 11 },
+            // { suit: '♦', value: 'J', points: 10 }
+        // ];
 
         // Calculate initial scores
         this.calculateScores();
@@ -174,7 +177,7 @@ class BlackjackGame {
                 const message = 'Both have Blackjack! Push!';
                 document.getElementById('gameStatus').textContent = message;
                 this.updateDisplay();
-                await new Promise(resolve => setTimeout(resolve, 500));
+                await new Promise(resolve => setTimeout(resolve, 1000));
                 this.awardWinnings(1);
                 await this.showMoneyUpdate();
                 await this.endGame(message);
@@ -184,7 +187,7 @@ class BlackjackGame {
             const message = 'Dealer has Blackjack! You lose!';
             document.getElementById('gameStatus').textContent = message;
             this.updateDisplay();
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise(resolve => setTimeout(resolve, 1000));
             this.awardWinnings(0);
             await this.showMoneyUpdate();
             await this.endGame(message);
@@ -196,7 +199,7 @@ class BlackjackGame {
             const message = 'Blackjack! You win!';
             document.getElementById('gameStatus').textContent = message;
             this.updateDisplay();
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise(resolve => setTimeout(resolve, 1000));
             this.awardWinnings(2.5);
             await this.showMoneyUpdate();
             await this.endGame(message);
@@ -204,7 +207,6 @@ class BlackjackGame {
         }
 
         this.updateDisplay();
-        this.updateControls();
 
     }
 
