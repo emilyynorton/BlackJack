@@ -256,12 +256,17 @@ class BlackjackGame {
         }
 
         if (this.dealerScore > 21) {
-            await this.endGame('Dealer busts, you win!');
+            const message = 'Dealer busts, you win!';
+            document.getElementById('gameStatus').textContent = message;
             this.awardWinnings(1);
+            await this.showMoneyUpdate();
+            await this.endGame(message);
         } else {
             const result = this.determineWinner();
-            await this.endGame(result.message);
+            document.getElementById('gameStatus').textContent = result.message;
             this.awardWinnings(result.multiplier);
+            await this.showMoneyUpdate();
+            await this.endGame(result.message);
         }
     }
 
@@ -301,33 +306,38 @@ class BlackjackGame {
     }
 
     awardWinnings(multiplier) {
-        // Calculate winnings
         let winnings = 0;
         if (multiplier > 0) {
-            if (multiplier === 1.5) { // Blackjack case
-                winnings = Math.floor(this.currentWager * 1.5);
+            if (multiplier === 1.5) {
+                winnings = (this.currentWager * 100) + Math.floor(this.currentWager * 1.5 * 100); // dollars to cents
             } else {
-                winnings = this.currentWager;
+                winnings = (this.currentWager * 100) + Math.floor(this.currentWager * 100); // dollars to cents
             }
         }
-        
-        // Update coins based on winnings
+    
+        // Award coins
         while (winnings > 0) {
-            if (winnings >= 25 && this.coins.quarters < 10) {
+            // Try to use quarters first
+            while (winnings >= 25 && this.coins.quarters < 10) {
                 this.coins.quarters++;
                 winnings -= 25;
-            } else if (winnings >= 10 && this.coins.dimes < 10) {
+            }
+            // Then dimes
+            while (winnings >= 10 && this.coins.dimes < 10) {
                 this.coins.dimes++;
                 winnings -= 10;
-            } else if (winnings >= 5 && this.coins.nickels < 10) {
+            }
+            // Finally nickels
+            while (winnings >= 5 && this.coins.nickels < 10) {
                 this.coins.nickels++;
                 winnings -= 5;
             }
+            // If we can't convert remaining amount, break
+            if (winnings > 0) break;
         }
-        
-        // Reset current wager
-        this.currentWager = 0;
+    
         this.updateTotalMoney();
+        this.currentWager = 0;
     }
 
     updateDisplay() {
@@ -423,14 +433,24 @@ class BlackjackGame {
         newGameButton.disabled = false;
     }
 
+    async showMoneyUpdate() {
+        // Force reflow to ensure DOM updates are applied
+        document.body.offsetHeight;
+        // Wait for money update to be visible
+        await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
     async endGame(message) {
         document.getElementById('gameStatus').textContent = message;
         this.updateControls();
         
+        // Update display to show current state
+        this.updateDisplay();
+        
         // Reset game after any win/loss condition
         if (message.includes('win') || message.includes('bust') || message.includes('lose') || message.includes('Dealer wins!')) {
-            // Add a delay before resetting to allow players to see the cards
-            await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second delay
+            // Add a longer delay to ensure all updates are visible
+            await new Promise(resolve => setTimeout(resolve, 2000)); // 3 second delay
             this.newGame();
         }
     }
