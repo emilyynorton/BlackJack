@@ -22,31 +22,20 @@ class BlackjackGame {
     }
 
     createDeck() {
-        try {
-            const suits = ['♠', '♥', '♦', '♣'];
-            const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
-            
-            this.deck = [];
-            for (let suit of suits) {
-                for (let value of values) {
-                    const points = value === 'A' ? 11 : value === 'J' || value === 'Q' || value === 'K' ? 10 : parseInt(value);
-                    if (isNaN(points)) {
-                        throw new Error(`Invalid points calculation for card ${value} of ${suit}`);
-                    }
-                    this.deck.push({
-                        suit,
-                        value,
-                        points
-                    });
-                }
+        const suits = ['♠', '♥', '♦', '♣'];
+        const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+        
+        this.deck = [];
+        for (let suit of suits) {
+            for (let value of values) {
+                this.deck.push({
+                    suit,
+                    value,
+                    points: value === 'A' ? 11 : value === 'J' || value === 'Q' || value === 'K' ? 10 : parseInt(value)
+                });
             }
-            
-            this.shuffleDeck();
-            
-        } catch (error) {
-            console.error('Deck creation error:', error);
-            this.endGame('Error creating deck. Please refresh the page.');
         }
+        this.shuffleDeck();
     }
 
     shuffleDeck() {
@@ -57,24 +46,15 @@ class BlackjackGame {
     }
 
     setupEventListeners() {
-        try {
-            const placeWager = document.getElementById('placeWager');
-            const hitButton = document.getElementById('hitButton');
-            const stayButton = document.getElementById('stayButton');
-            const newGameButton = document.getElementById('newGameButton');
+        const placeWager = document.getElementById('placeWager');
+        const hitButton = document.getElementById('hitButton');
+        const stayButton = document.getElementById('stayButton');
+        const newGameButton = document.getElementById('newGameButton');
 
-            if (!placeWager || !hitButton || !stayButton || !newGameButton) {
-                throw new Error('Missing required game elements');
-            }
-
-            placeWager.addEventListener('click', () => this.placeWager());
-            hitButton.addEventListener('click', () => this.hit());
-            stayButton.addEventListener('click', () => this.stay());
-            newGameButton.addEventListener('click', () => this.newGame());
-        } catch (error) {
-            console.error('Event listener setup error:', error);
-            this.endGame('Error setting up game controls. Please refresh the page.');
-        }
+        placeWager.addEventListener('click', () => this.placeWager());
+        hitButton.addEventListener('click', () => this.hit());
+        stayButton.addEventListener('click', () => this.stay());
+        newGameButton.addEventListener('click', () => this.newGame());
     }
 
     placeWager() {
@@ -94,6 +74,7 @@ class BlackjackGame {
         // Find a valid combination of coins that won't go negative
         let isValidWager = false;
         let bestCombination = null;
+        let bestCombinationMessage = '';
         
         // Try different combinations of coins, prioritizing quarters first
         // Start with maximum quarters and reduce until we find a valid combination
@@ -150,18 +131,10 @@ class BlackjackGame {
         const visibleCard = this.deck.pop();
         this.dealerHand.push(hiddenCard);
         this.dealerHand.push(visibleCard);
-        // this.dealerHand = [
-            // { suit: '♠', value: 'A', points: 11 },
-            // { suit: '♦', value: 'J', points: 10 }
-        // ];
         
         // Player gets two cards
         this.playerHand.push(this.deck.pop());
         this.playerHand.push(this.deck.pop());
-        // this.playerHand = [
-            // { suit: '♠', value: 'A', points: 11 },
-            // { suit: '♦', value: 'J', points: 10 }
-        // ];
 
         // Calculate initial scores
         this.calculateScores();
@@ -170,44 +143,14 @@ class BlackjackGame {
         if (this.dealerScore === 21 && this.dealerHand.length === 2) {
             this.dealerReveal = true;
             this.revealDealerCard();
-            
-            // Check if both have Blackjack
-            if (this.playerScore === 21 && this.playerHand.length === 2) {
-                
-                const message = 'Both have Blackjack! Push!';
-                document.getElementById('gameStatus').textContent = message;
-                this.updateDisplay();
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                this.awardWinnings(1);
-                await this.showMoneyUpdate();
-                await this.endGame(message);
-                return;
-            }
-                       
-            const message = 'Dealer has Blackjack! You lose!';
-            document.getElementById('gameStatus').textContent = message;
-            this.updateDisplay();
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, 500)); // Small delay for reveal animation
+            this.endGame('Dealer has Blackjack! You lose!');
             this.awardWinnings(0);
-            await this.showMoneyUpdate();
-            await this.endGame(message);
-            return;
-        }
-
-        // Check for player Blackjack
-        if (this.playerScore === 21 && this.playerHand.length === 2) {
-            const message = 'Blackjack! You win!';
-            document.getElementById('gameStatus').textContent = message;
-            this.updateDisplay();
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            this.awardWinnings(2.5);
-            await this.showMoneyUpdate();
-            await this.endGame(message);
             return;
         }
 
         this.updateDisplay();
-
+        this.updateControls();
     }
 
     hit() {
@@ -216,8 +159,14 @@ class BlackjackGame {
         this.calculateScores();
         this.updateDisplay();
 
-        if (this.playerScore > 21) {
-            this.endGame('Bust! Dealer wins!');
+        if (this.playerScore === 21) {
+            // If player gets 21 with more than 2 cards, it's not Blackjack
+            if (this.playerHand.length > 2) {
+                this.endGame('You have 21!');
+                this.awardWinnings(1);
+            }
+        } else if (this.playerScore > 21) {
+            this.endGame('Player busts!');
             this.awardWinnings(0);
         }
     }
@@ -233,58 +182,36 @@ class BlackjackGame {
                 overlay.remove();
                 
                 // Update the dealer's score display to show the full score
-                // const dealerScoreElement = document.getElementById('dealerScore');
-                // dealerScoreElement.textContent = this.dealerScore;
+                const dealerScoreElement = document.getElementById('dealerScore');
+                dealerScoreElement.textContent = this.dealerScore;
             }
         }
     }
 
     async stay() {
         if (this.currentWager === 0) return;
-        
-        // Reveal dealer's hidden card
         this.dealerReveal = true;
         this.revealDealerCard();
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Calculate scores after reveal
+        await new Promise(resolve => setTimeout(resolve, 500)); // Small delay to ensure reveal animation
         this.calculateScores();
-        console.log('Dealer score:', this.dealerScore);
         this.updateDisplay();
 
         // Dealer must hit if score is 16 or less
         while (this.dealerScore <= 16) {
-           
-            // Add a short delay before the dealer hits
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
-            // Get the new card
-            const newCard = this.deck.pop();
-            this.dealerHand.push(newCard);
+            this.dealerHand.push(this.deck.pop());
             this.calculateScores();
             this.updateDisplay();
-            
-            // Add a longer delay to show the new card
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            // Clear the status message
-            // console.log('Dealer score:', this.dealerScore);
+            // Small delay between dealer hits for better visual effect
+            await new Promise(resolve => setTimeout(resolve, 1000));
         }
 
         if (this.dealerScore > 21) {
-            const message = 'Dealer busts, you win!';
-            document.getElementById('gameStatus').textContent = message;
-            await new Promise(resolve => setTimeout(resolve, 500));
-            this.awardWinnings(2);
-            await this.showMoneyUpdate();
-            await this.endGame(message);
+            this.endGame('Dealer busts, you win!');
+            this.awardWinnings(1);
         } else {
             const result = this.determineWinner();
-            document.getElementById('gameStatus').textContent = result.message;
-            await new Promise(resolve => setTimeout(resolve, 500));
+            this.endGame(result.message);
             this.awardWinnings(result.multiplier);
-            await this.showMoneyUpdate();
-            await this.endGame(result.message);
         }
     }
 
@@ -312,48 +239,57 @@ class BlackjackGame {
     }
 
     determineWinner() {
-    
+        // Check for player Blackjack
+        if (this.playerScore === 21 && this.playerHand.length === 2) {
+            if (this.dealerScore === 21 && this.dealerHand.length === 2) {
+                return { message: 'Both have Blackjack! Push!', multiplier: 1 };
+            }
+            return { message: 'Blackjack! You win!', multiplier: 1.5 };
+        }
+        
+        // Check for dealer Blackjack
+        if (this.dealerScore === 21 && this.dealerHand.length === 2) {
+            return { message: 'Dealer has Blackjack! You lose!', multiplier: 0 };
+        }
+        
         // Compare scores
         if (this.playerScore === this.dealerScore) {
             return { message: 'Push! No winner.', multiplier: 1 };
         } else if (this.playerScore > this.dealerScore) {
-            return { message: 'You win!', multiplier: 2 };
+            return { message: 'You win!', multiplier: 1 };
         } else {
             return { message: 'Dealer wins!', multiplier: 0 };
         }
     }
 
     awardWinnings(multiplier) {
+        // Calculate winnings
         let winnings = 0;
-        const wagerInCents = Math.floor(this.currentWager * 100);
         if (multiplier > 0) {
-            winnings = Math.floor((this.currentWager * (multiplier-1)) * 100); // cents
-            winnings += wagerInCents;
+            if (multiplier === 1.5) { // Blackjack case
+                winnings = Math.floor(this.currentWager * 1.5);
+            } else {
+                winnings = this.currentWager;
+            }
         }
-    
-        // Award coins
+        
+        // Update coins based on winnings
         while (winnings > 0) {
-            // Try to use quarters first
-            while (winnings >= 25) {
+            if (winnings >= 25 && this.coins.quarters < 10) {
                 this.coins.quarters++;
                 winnings -= 25;
-            }
-            // Then dimes
-            while (winnings >= 10) {
+            } else if (winnings >= 10 && this.coins.dimes < 10) {
                 this.coins.dimes++;
                 winnings -= 10;
-            }
-            // Finally nickels
-            while (winnings >= 5) {
+            } else if (winnings >= 5 && this.coins.nickels < 10) {
                 this.coins.nickels++;
                 winnings -= 5;
             }
-            // If we can't convert remaining amount, break
-            if (winnings > 0) break;
         }
-    
-        this.updateTotalMoney();
+        
+        // Reset current wager
         this.currentWager = 0;
+        this.updateTotalMoney();
     }
 
     updateDisplay() {
@@ -383,24 +319,26 @@ class BlackjackGame {
             dealerPlaceholders.style.display = 'none';
             playerPlaceholders.style.display = 'none';
 
-            // Clear and add dealer cards
-            dealerCards.innerHTML = '';
-            this.dealerHand.forEach((card, index) => {
-                const cardElement = document.createElement('div');
-                cardElement.className = 'card';
-                cardElement.innerHTML = this.createCardElement(card);
-                
-                // Only add overlay to the first card if dealerReveal is false
-                if (index === 0 && !this.dealerReveal) {
-                    const overlay = document.createElement('div');
-                    overlay.className = 'card-overlay';
-                    cardElement.appendChild(overlay);
-                }
-                
-                dealerCards.appendChild(cardElement);
-            });
+            // Handle dealer cards - keep the first card hidden until reveal
+        dealerCards.innerHTML = '';
+        
+        // Add dealer cards
+        this.dealerHand.forEach((card, index) => {
+            const cardElement = document.createElement('div');
+            cardElement.className = 'card';
+            cardElement.innerHTML = this.createCardElement(card);
+            
+            // Only add overlay to the first card if dealerReveal is false
+            if (index === 0 && !this.dealerReveal) {
+                const overlay = document.createElement('div');
+                overlay.className = 'card-overlay';
+                cardElement.appendChild(overlay);
+            }
+            
+            dealerCards.appendChild(cardElement);
+        });
 
-            // Clear and add player cards
+            // Update player cards
             playerCards.innerHTML = '';
             this.playerHand.forEach(card => {
                 const cardElement = document.createElement('div');
@@ -449,30 +387,15 @@ class BlackjackGame {
         newGameButton.disabled = false;
     }
 
-    async showMoneyUpdate() {
-        // Force reflow to ensure DOM updates are applied
-        document.body.offsetHeight;
-        // Wait for money update to be visible
-        await new Promise(resolve => setTimeout(resolve, 1000));
-    }
-
     async endGame(message) {
-        // Store the message element
-        const statusElement = document.getElementById('gameStatus');
-        statusElement.textContent = message;
+        document.getElementById('gameStatus').textContent = message;
         this.updateControls();
         
-        // Update display to show current state
-        this.updateDisplay();
-        
-        // Reset game after any win/loss condition
-        if (message.includes('win') || message.includes('bust') || message.includes('lose') || message.includes('Dealer wins!')) {
-            // Add a longer delay to ensure all updates are visible
-            await new Promise(resolve => setTimeout(resolve, 2000)); // 3 second delay
+        // Reset game after a win/loss
+        if (message.includes('win') || message.includes('bust') || message.includes('lose')) {
+            // Add a delay before resetting to allow players to see the cards
+            await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second delay
             this.newGame();
-            
-            // Clear the message after the game is reset
-            statusElement.textContent = '';
         }
     }
 
