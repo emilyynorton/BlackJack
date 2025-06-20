@@ -332,17 +332,17 @@ class BlackjackGame {
         // Award coins
         while (winnings > 0) {
             // Try to use quarters first
-            while (winnings >= 25 && this.coins.quarters < 10) {
+            while (winnings >= 25) {
                 this.coins.quarters++;
                 winnings -= 25;
             }
             // Then dimes
-            while (winnings >= 10 && this.coins.dimes < 10) {
+            while (winnings >= 10) {
                 this.coins.dimes++;
                 winnings -= 10;
             }
             // Finally nickels
-            while (winnings >= 5 && this.coins.nickels < 10) {
+            while (winnings >= 5) {
                 this.coins.nickels++;
                 winnings -= 5;
             }
