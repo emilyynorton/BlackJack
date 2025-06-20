@@ -151,6 +151,10 @@ class BlackjackGame {
         const visibleCard = this.deck.pop();
         this.dealerHand.push(hiddenCard);
         this.dealerHand.push(visibleCard);
+        // this.dealerHand = [
+            // { suit: '♠', value: 'A', points: 11 },
+            // { suit: '♦', value: 'J', points: 10 }
+        // ];
         
         // Player gets two cards
         this.playerHand.push(this.deck.pop());
@@ -163,43 +167,45 @@ class BlackjackGame {
         if (this.dealerScore === 21 && this.dealerHand.length === 2) {
             this.dealerReveal = true;
             this.revealDealerCard();
-            await new Promise(resolve => setTimeout(resolve, 500)); // Small delay for reveal animation
             
             // Check if both have Blackjack
             if (this.playerScore === 21 && this.playerHand.length === 2) {
-                // const statusElement = document.getElementById('gameStatus');
-                //if (statusElement) {
-                    // statusElement.textContent = 'Both have Blackjack! Push!';
-                // }
+                
                 const message = 'Both have Blackjack! Push!';
                 document.getElementById('gameStatus').textContent = message;
+                this.updateDisplay();
+                await new Promise(resolve => setTimeout(resolve, 500));
                 this.awardWinnings(1);
                 await this.showMoneyUpdate();
                 await this.endGame(message);
+                return;
             }
-            
-            // const statusElement = document.getElementById('gameStatus');
-            // if (statusElement) {
-                // statusElement.textContent = 'Dealer has Blackjack! You lose!';
-            // }
+                       
             const message = 'Dealer has Blackjack! You lose!';
             document.getElementById('gameStatus').textContent = message;
+            this.updateDisplay();
+            await new Promise(resolve => setTimeout(resolve, 500));
             this.awardWinnings(0);
             await this.showMoneyUpdate();
             await this.endGame(message);
+            return;
         }
 
         // Check for player Blackjack
         if (this.playerScore === 21 && this.playerHand.length === 2) {
             const message = 'Blackjack! You win!';
             document.getElementById('gameStatus').textContent = message;
+            this.updateDisplay();
+            await new Promise(resolve => setTimeout(resolve, 500));
             this.awardWinnings(2.5);
             await this.showMoneyUpdate();
             await this.endGame(message);
+            return;
         }
 
         this.updateDisplay();
         this.updateControls();
+
     }
 
     hit() {
@@ -257,7 +263,7 @@ class BlackjackGame {
             this.updateDisplay();
             
             // Add a longer delay to show the new card
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            await new Promise(resolve => setTimeout(resolve, 2000));
             
             // Clear the status message
             // console.log('Dealer score:', this.dealerScore);
@@ -266,12 +272,14 @@ class BlackjackGame {
         if (this.dealerScore > 21) {
             const message = 'Dealer busts, you win!';
             document.getElementById('gameStatus').textContent = message;
+            await new Promise(resolve => setTimeout(resolve, 500));
             this.awardWinnings(2);
             await this.showMoneyUpdate();
             await this.endGame(message);
         } else {
             const result = this.determineWinner();
             document.getElementById('gameStatus').textContent = result.message;
+            await new Promise(resolve => setTimeout(resolve, 500));
             this.awardWinnings(result.multiplier);
             await this.showMoneyUpdate();
             await this.endGame(result.message);
@@ -447,7 +455,9 @@ class BlackjackGame {
     }
 
     async endGame(message) {
-        document.getElementById('gameStatus').textContent = message;
+        // Store the message element
+        const statusElement = document.getElementById('gameStatus');
+        statusElement.textContent = message;
         this.updateControls();
         
         // Update display to show current state
@@ -458,6 +468,9 @@ class BlackjackGame {
             // Add a longer delay to ensure all updates are visible
             await new Promise(resolve => setTimeout(resolve, 2000)); // 3 second delay
             this.newGame();
+            
+            // Clear the message after the game is reset
+            statusElement.textContent = '';
         }
     }
 
